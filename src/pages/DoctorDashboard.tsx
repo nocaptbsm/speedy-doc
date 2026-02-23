@@ -2,11 +2,11 @@ import { useQueue } from "@/contexts/QueueContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2 } from "lucide-react";
+import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const DoctorDashboard = () => {
-  const { patients, callNextPatient, markDone, currentPatient, avgMinutesPerPatient } = useQueue();
+  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient } = useQueue();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -116,9 +116,20 @@ const DoctorDashboard = () => {
                           <p className="text-xs text-muted-foreground">{patient.reason}</p>
                         </div>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        ~{(idx + (currentPatient ? 1 : 0)) * avgMinutesPerPatient}m
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" disabled={idx === 0} onClick={() => movePatient(patient.id, "up")}>
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" disabled={idx === waitingPatients.length - 1} onClick={() => movePatient(patient.id, "down")}>
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => callSpecificPatient(patient.id)}>
+                          <PhoneCall className="mr-1 h-3 w-3" /> Call
+                        </Button>
+                        <span className="ml-1 text-sm text-muted-foreground">
+                          ~{(idx + (currentPatient ? 1 : 0)) * avgMinutesPerPatient}m
+                        </span>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
