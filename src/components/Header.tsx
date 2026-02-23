@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Stethoscope, CalendarPlus, LayoutDashboard, UserSearch } from "lucide-react";
+import { Stethoscope, CalendarPlus, LayoutDashboard, UserSearch, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Header = () => {
@@ -8,7 +8,8 @@ const Header = () => {
   const links = [
     { to: "/", label: "Book", icon: CalendarPlus },
     { to: "/patients", label: "Patient Status", icon: UserSearch },
-    { to: "/doctor", label: "Doctor Dashboard", icon: LayoutDashboard },
+    { to: "/records", label: "Records", icon: ClipboardList },
+    { to: "/doctor", label: "Doctor", icon: LayoutDashboard },
   ];
 
   return (
