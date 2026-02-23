@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Index from "./pages/Index";
 import PatientQueue from "./pages/PatientQueue";
 import PatientsDashboard from "./pages/PatientsDashboard";
+import PatientRecords from "./pages/PatientRecords";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/queue/:id" element={<PatientQueue />} />
             <Route path="/patients" element={<PatientsDashboard />} />
+            <Route path="/records" element={<PatientRecords />} />
             <Route path="/doctor" element={<DoctorDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

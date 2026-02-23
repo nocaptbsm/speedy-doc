@@ -9,11 +9,12 @@ export interface Patient {
   calledAt?: number;
   doneAt?: number;
   status: "waiting" | "called" | "done";
+  isFollowUp: boolean;
 }
 
 interface QueueContextType {
   patients: Patient[];
-  addPatient: (patient: Omit<Patient, "id" | "bookedAt" | "status">) => Patient;
+  addPatient: (patient: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp">) => Patient;
   callNextPatient: () => Patient | null;
   callSpecificPatient: (id: string) => void;
   movePatient: (id: string, direction: "up" | "down") => void;
@@ -27,7 +28,8 @@ interface QueueContextType {
 
 const QueueContext = createContext<QueueContextType | null>(null);
 
-const AVG_MINUTES = 10;
+const FIRST_VISIT_MINUTES = 10;
+const FOLLOW_UP_MINUTES = 5;
 
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [patients, setPatients] = useState<Patient[]>(() => {
@@ -39,16 +41,18 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem("clinic-queue", JSON.stringify(patients));
   }, [patients]);
 
-  const addPatient = useCallback((data: Omit<Patient, "id" | "bookedAt" | "status">) => {
+  const addPatient = useCallback((data: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp">) => {
+    const hasVisitedBefore = patients.some((p) => p.phone === data.phone && p.status === "done");
     const newPatient: Patient = {
       ...data,
       id: crypto.randomUUID(),
       bookedAt: Date.now(),
       status: "waiting",
+      isFollowUp: hasVisitedBefore,
     };
     setPatients((prev) => [...prev, newPatient]);
     return newPatient;
-  }, []);
+  }, [patients]);
 
   const callNextPatient = useCallback(() => {
     let calledPatient: Patient | null = null;
@@ -114,9 +118,18 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getPatientETA = useCallback(
     (id: string) => {
-      const pos = waitingPatients.findIndex((p) => p.id === id);
-      if (pos === -1) return 0;
-      return (pos + (currentPatient ? 1 : 0)) * AVG_MINUTES;
+      const idx = waitingPatients.findIndex((p) => p.id === id);
+      if (idx === -1) return 0;
+      let eta = 0;
+      // Add time for current patient if any
+      if (currentPatient) {
+        eta += currentPatient.isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
+      }
+      // Add time for each patient ahead in queue
+      for (let i = 0; i < idx; i++) {
+        eta += waitingPatients[i].isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
+      }
+      return eta;
     },
     [waitingPatients, currentPatient]
   );
@@ -128,7 +141,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: AVG_MINUTES, findPatientByPhone }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone }}
     >
       {children}
     </QueueContext.Provider>
