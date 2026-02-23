@@ -6,6 +6,8 @@ export interface Patient {
   phone: string;
   reason: string;
   bookedAt: number;
+  calledAt?: number;
+  doneAt?: number;
   status: "waiting" | "called" | "done";
 }
 
@@ -51,10 +53,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const callNextPatient = useCallback(() => {
     let calledPatient: Patient | null = null;
     setPatients((prev) => {
-      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const } : p));
+      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const, doneAt: Date.now() } : p));
       const nextIdx = updated.findIndex((p) => p.status === "waiting");
       if (nextIdx === -1) return updated;
-      calledPatient = { ...updated[nextIdx], status: "called" };
+      calledPatient = { ...updated[nextIdx], status: "called", calledAt: Date.now() };
       updated[nextIdx] = calledPatient;
       return [...updated];
     });
@@ -63,8 +65,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const callSpecificPatient = useCallback((id: string) => {
     setPatients((prev) => {
-      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const } : p));
-      return updated.map((p) => (p.id === id ? { ...p, status: "called" as const } : p));
+      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const, doneAt: Date.now() } : p));
+      return updated.map((p) => (p.id === id ? { ...p, status: "called" as const, calledAt: Date.now() } : p));
     });
   }, []);
 
@@ -95,7 +97,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const markDone = useCallback((id: string) => {
-    setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done" } : p)));
+    setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done", doneAt: Date.now() } : p)));
   }, []);
 
   const waitingPatients = patients.filter((p) => p.status === "waiting");
@@ -120,7 +122,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const findPatientByPhone = useCallback(
-    (phone: string) => patients.find((p) => p.phone === phone && p.status !== "done"),
+    (phone: string) => patients.find((p) => p.phone === phone),
     [patients]
   );
 

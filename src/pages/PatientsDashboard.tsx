@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { Search, Hash, Clock, PhoneCall, CheckCircle2 } from "lucide-react";
+import { Search, Hash, Clock, PhoneCall, CheckCircle2, Heart, CalendarClock } from "lucide-react";
 
 const PatientsDashboard = () => {
   const { findPatientByPhone, getPatientPosition, getPatientETA } = useQueue();
@@ -22,6 +22,11 @@ const PatientsDashboard = () => {
   const position = patient ? getPatientPosition(patient.id) : -1;
   const eta = patient ? getPatientETA(patient.id) : 0;
   const isCalled = patient?.status === "called";
+  const isDone = patient?.status === "done";
+
+  const consultationMinutes = isDone && patient?.calledAt && patient?.doneAt
+    ? Math.max(1, Math.round((patient.doneAt - patient.calledAt) / 60000))
+    : 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -74,7 +79,43 @@ const PatientsDashboard = () => {
           </motion.div>
         )}
 
-        {patient && !isCalled && (
+        {patient && isDone && (
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+            <Card className="shadow-soft border-primary/20">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <CheckCircle2 className="h-7 w-7 text-primary" />
+                </div>
+                <CardTitle>Visit Completed</CardTitle>
+                <CardDescription>Thank you, {patient.name}!</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {consultationMinutes > 0 && (
+                  <div className="rounded-xl bg-accent p-4 text-center">
+                    <Clock className="mx-auto mb-1 h-5 w-5 text-accent-foreground" />
+                    <p className="text-2xl font-bold text-foreground">{consultationMinutes} min</p>
+                    <p className="text-xs text-muted-foreground">Consultation Duration</p>
+                  </div>
+                )}
+                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 text-center">
+                  <Heart className="mx-auto mb-2 h-6 w-6 text-primary" />
+                  <p className="font-medium text-foreground">Get well soon! 💐</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Wishing you a speedy recovery and good health!
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl bg-accent p-4">
+                  <CalendarClock className="h-5 w-5 shrink-0 text-accent-foreground" />
+                  <p className="text-sm text-foreground">
+                    Please schedule a <span className="font-semibold">follow-up visit within 3 weeks</span> for a check-up.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {patient && !isCalled && !isDone && (
           <Card className="shadow-soft">
             <CardHeader className="text-center">
               <CardTitle>{patient.name}</CardTitle>
