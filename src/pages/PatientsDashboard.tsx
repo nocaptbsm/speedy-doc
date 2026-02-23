@@ -7,6 +7,25 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { Search, Hash, Clock, PhoneCall, CheckCircle2, Heart, CalendarClock } from "lucide-react";
 
+const WELL_WISHES = [
+  { emoji: "🌻", title: "Bloom back to health!", message: "Every day is a step closer to feeling your best. Take care!" },
+  { emoji: "💪", title: "You've got this!", message: "Healing is not linear, but you're stronger than you think." },
+  { emoji: "🌈", title: "Brighter days ahead!", message: "Rest up and let your body do what it does best — heal." },
+  { emoji: "☀️", title: "Sunshine & good health!", message: "Wishing you a swift recovery and plenty of smiles along the way." },
+  { emoji: "🍃", title: "Breathe easy, heal gently.", message: "Nature's best medicine is rest. Be kind to yourself." },
+  { emoji: "🫶", title: "Sending warm wishes!", message: "Your health is your greatest wealth. Take it one day at a time." },
+  { emoji: "✨", title: "Sparkle back to wellness!", message: "May your recovery be as smooth as a calm ocean breeze." },
+  { emoji: "🌸", title: "Wishing you petal-soft recovery!", message: "Spring always follows winter. Better days are coming!" },
+  { emoji: "🕊️", title: "Peace, rest & recovery.", message: "Let go of worries and let healing take its course." },
+  { emoji: "🎋", title: "Stay strong, stay positive!", message: "A positive mind fuels a healthy body. You'll bounce back!" },
+];
+
+const getRandomWish = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  return WELL_WISHES[Math.abs(hash) % WELL_WISHES.length];
+};
+
 const PatientsDashboard = () => {
   const { findPatientByPhone, getPatientPosition, getPatientETA } = useQueue();
   const [phone, setPhone] = useState("");
@@ -97,11 +116,11 @@ const PatientsDashboard = () => {
                     <p className="text-xs text-muted-foreground">Consultation Duration</p>
                   </div>
                 )}
-                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 text-center">
-                  <Heart className="mx-auto mb-2 h-6 w-6 text-primary" />
-                  <p className="font-medium text-foreground">Get well soon! 💐</p>
+                <div className="rounded-xl border border-primary/10 bg-primary/5 p-6 text-center">
+                  <span className="text-4xl">{getRandomWish(patient.id).emoji}</span>
+                  <p className="mt-2 text-lg font-semibold text-foreground">{getRandomWish(patient.id).title}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Wishing you a speedy recovery and good health!
+                    {getRandomWish(patient.id).message}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl bg-accent p-4">
