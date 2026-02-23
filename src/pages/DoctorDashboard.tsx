@@ -1,21 +1,72 @@
 import { useQueue } from "@/contexts/QueueContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown } from "lucide-react";
+import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
+
+const DOCTOR_ID = "1234";
+const DOCTOR_PASSWORD = "1234";
 
 const DoctorDashboard = () => {
   const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient } = useQueue();
   const [, setTick] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [doctorId, setDoctorId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 5000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (doctorId === DOCTOR_ID && password === DOCTOR_PASSWORD) {
+      setIsAuthenticated(true);
+      setError("");
+    } else {
+      setError("Invalid ID or password");
+    }
+  };
+
   const waitingPatients = patients.filter((p) => p.status === "waiting");
   const doneToday = patients.filter((p) => p.status === "done").length;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="w-full max-w-sm shadow-soft">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Lock className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Doctor Login</CardTitle>
+              <CardDescription>Enter your credentials to access the dashboard</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="doctorId">Doctor ID</Label>
+                  <Input id="doctorId" placeholder="Enter your ID" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="w-full gradient-primary text-primary-foreground">Login</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
