@@ -10,20 +10,25 @@ export interface Patient {
   doneAt?: number;
   status: "waiting" | "called" | "done";
   isFollowUp: boolean;
+  visitNumber: number;
+  doctorNotes?: string;
 }
 
 interface QueueContextType {
   patients: Patient[];
-  addPatient: (patient: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp">) => Patient;
+  addPatient: (patient: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">) => Patient;
   callNextPatient: () => Patient | null;
   callSpecificPatient: (id: string) => void;
   movePatient: (id: string, direction: "up" | "down") => void;
-  markDone: (id: string) => void;
+  markDone: (id: string, notes?: string) => void;
   getPatientPosition: (id: string) => number;
   getPatientETA: (id: string) => number;
   currentPatient: Patient | null;
   avgMinutesPerPatient: number;
   findPatientByPhone: (phone: string) => Patient | undefined;
+  delayMinutes: number;
+  setDelayMinutes: (minutes: number) => void;
+  getVisitCount: (phone: string) => number;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -36,19 +41,26 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const stored = localStorage.getItem("clinic-queue");
     return stored ? JSON.parse(stored) : [];
   });
+  const [delayMinutes, setDelayMinutes] = useState<number>(0);
 
   useEffect(() => {
     localStorage.setItem("clinic-queue", JSON.stringify(patients));
   }, [patients]);
 
-  const addPatient = useCallback((data: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp">) => {
-    const hasVisitedBefore = patients.some((p) => p.phone === data.phone && p.status === "done");
+  const getVisitCount = useCallback((phone: string) => {
+    return patients.filter((p) => p.phone === phone && p.status === "done").length;
+  }, [patients]);
+
+  const addPatient = useCallback((data: Omit<Patient, "id" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">) => {
+    const doneVisits = patients.filter((p) => p.phone === data.phone && p.status === "done").length;
+    const hasVisitedBefore = doneVisits > 0;
     const newPatient: Patient = {
       ...data,
       id: crypto.randomUUID(),
       bookedAt: Date.now(),
       status: "waiting",
       isFollowUp: hasVisitedBefore,
+      visitNumber: doneVisits + 1,
     };
     setPatients((prev) => [...prev, newPatient]);
     return newPatient;
@@ -100,8 +112,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, []);
 
-  const markDone = useCallback((id: string) => {
-    setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done", doneAt: Date.now() } : p)));
+  const markDone = useCallback((id: string, notes?: string) => {
+    setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done", doneAt: Date.now(), doctorNotes: notes || p.doctorNotes } : p)));
   }, []);
 
   const waitingPatients = patients.filter((p) => p.status === "waiting");
@@ -120,18 +132,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     (id: string) => {
       const idx = waitingPatients.findIndex((p) => p.id === id);
       if (idx === -1) return 0;
-      let eta = 0;
-      // Add time for current patient if any
+      let eta = delayMinutes;
       if (currentPatient) {
         eta += currentPatient.isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
       }
-      // Add time for each patient ahead in queue
       for (let i = 0; i < idx; i++) {
         eta += waitingPatients[i].isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
       }
       return eta;
     },
-    [waitingPatients, currentPatient]
+    [waitingPatients, currentPatient, delayMinutes]
   );
 
   const findPatientByPhone = useCallback(
@@ -141,7 +151,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, delayMinutes, setDelayMinutes, getVisitCount }}
     >
       {children}
     </QueueContext.Provider>
