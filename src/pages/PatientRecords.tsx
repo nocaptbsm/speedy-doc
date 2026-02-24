@@ -146,7 +146,7 @@ const PatientRecords = () => {
                           <TableCell>
                             <Badge
                               variant={visitNum > 1 ? "outline" : "default"}
-                              className={`text-xs ${visitNum > 1 ? "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300" : ""}`}
+                              className={`text-xs ${visitNum > 1 ? "border-orange-400 bg-orange-100 text-orange-700 dark:border-orange-500 dark:bg-orange-950 dark:text-orange-300" : ""}`}
                             >
                               {visitNum > 1 ? `Follow-up #${visitNum}` : "First Visit"}
                             </Badge>
