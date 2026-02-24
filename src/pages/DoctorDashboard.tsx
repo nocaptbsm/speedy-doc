@@ -8,8 +8,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const DOCTOR_ID = "1234";
-const DOCTOR_PASSWORD = "1234";
+const VALID_CREDENTIALS = [
+  { id: "1234", password: "1234" },
+  { id: "DRSK", password: "Sandeep1234" },
+];
 
 const DoctorDashboard = () => {
   const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes } = useQueue();
@@ -27,7 +29,7 @@ const DoctorDashboard = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (doctorId === DOCTOR_ID && password === DOCTOR_PASSWORD) {
+    if (VALID_CREDENTIALS.some((c) => c.id === doctorId && c.password === password)) {
       setIsAuthenticated(true);
       setError("");
     } else {
