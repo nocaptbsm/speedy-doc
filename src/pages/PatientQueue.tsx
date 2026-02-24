@@ -84,6 +84,9 @@ const PatientQueue = () => {
                   <Clock className="mx-auto mb-1 h-5 w-5 text-accent-foreground" />
                   <p className="text-3xl font-bold text-foreground">~{eta}</p>
                   <p className="text-xs text-muted-foreground">Minutes ETA</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    ~{new Date(Date.now() + eta * 60000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                  </p>
                 </div>
               </div>
             )}

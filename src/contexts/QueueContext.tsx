@@ -69,21 +69,20 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const callNextPatient = useCallback(() => {
     let calledPatient: Patient | null = null;
     setPatients((prev) => {
-      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const, doneAt: Date.now() } : p));
-      const nextIdx = updated.findIndex((p) => p.status === "waiting");
-      if (nextIdx === -1) return updated;
-      calledPatient = { ...updated[nextIdx], status: "called", calledAt: Date.now() };
+      const nextIdx = prev.findIndex((p) => p.status === "waiting");
+      if (nextIdx === -1) return prev;
+      calledPatient = { ...prev[nextIdx], status: "called", calledAt: Date.now() };
+      const updated = [...prev];
       updated[nextIdx] = calledPatient;
-      return [...updated];
+      return updated;
     });
     return calledPatient;
   }, []);
 
   const callSpecificPatient = useCallback((id: string) => {
-    setPatients((prev) => {
-      const updated = prev.map((p) => (p.status === "called" ? { ...p, status: "done" as const, doneAt: Date.now() } : p));
-      return updated.map((p) => (p.id === id ? { ...p, status: "called" as const, calledAt: Date.now() } : p));
-    });
+    setPatients((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, status: "called" as const, calledAt: Date.now() } : p))
+    );
   }, []);
 
   const movePatient = useCallback((id: string, direction: "up" | "down") => {
@@ -117,7 +116,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const waitingPatients = patients.filter((p) => p.status === "waiting");
-  const currentPatient = patients.find((p) => p.status === "called") || null;
+  const calledPatients = patients.filter((p) => p.status === "called");
+  const currentPatient = calledPatients[0] || null;
 
   const getPatientPosition = useCallback(
     (id: string) => {
@@ -133,15 +133,15 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const idx = waitingPatients.findIndex((p) => p.id === id);
       if (idx === -1) return 0;
       let eta = delayMinutes;
-      if (currentPatient) {
-        eta += currentPatient.isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
+      for (const cp of calledPatients) {
+        eta += cp.isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
       }
       for (let i = 0; i < idx; i++) {
         eta += waitingPatients[i].isFollowUp ? FOLLOW_UP_MINUTES : FIRST_VISIT_MINUTES;
       }
       return eta;
     },
-    [waitingPatients, currentPatient, delayMinutes]
+    [waitingPatients, calledPatients, delayMinutes]
   );
 
   const findPatientByPhone = useCallback(
