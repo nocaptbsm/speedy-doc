@@ -137,6 +137,7 @@ const PatientsDashboard = () => {
         {patient && !isCalled && !isDone && (
           <Card className="shadow-soft">
             <CardHeader className="text-center">
+              <p className="text-xs font-mono font-semibold text-primary">{patient.patientId || "—"}</p>
               <CardTitle>{patient.name}</CardTitle>
               <CardDescription>{patient.reason}</CardDescription>
             </CardHeader>

@@ -205,7 +205,7 @@ const DoctorDashboard = () => {
         >
           <PhoneCall className="mr-2 h-5 w-5" />
           Call Next Patient
-          {waitingPatients.length > 0 && ` (${waitingPatients[0].name})`}
+          {waitingPatients.length > 0 && ` (${waitingPatients[0].patientId || waitingPatients[0].name})`}
         </Button>
 
         {/* Waiting List */}
@@ -234,7 +234,7 @@ const DoctorDashboard = () => {
                           {idx + 1}
                         </span>
                         <div>
-                          <p className="font-medium text-foreground">{patient.name}</p>
+                          <p className="font-medium text-foreground">{patient.patientId || "—"} <span className="text-muted-foreground font-normal">— {patient.name}</span></p>
                           <p className="text-xs text-muted-foreground">
                             {patient.reason} • {patient.isFollowUp ? `Follow-up #${patient.visitNumber}` : "First Visit"}
                           </p>
