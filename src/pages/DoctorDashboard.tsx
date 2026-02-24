@@ -3,20 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock } from "lucide-react";
+import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const DOCTOR_ID = "1234";
 const DOCTOR_PASSWORD = "1234";
 
 const DoctorDashboard = () => {
-  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient } = useQueue();
+  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes } = useQueue();
   const [, setTick] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [doctorId, setDoctorId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [currentNotes, setCurrentNotes] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 5000);
@@ -30,6 +32,13 @@ const DoctorDashboard = () => {
       setError("");
     } else {
       setError("Invalid ID or password");
+    }
+  };
+
+  const handleMarkDone = () => {
+    if (currentPatient) {
+      markDone(currentPatient.id, currentNotes);
+      setCurrentNotes("");
     }
   };
 
@@ -89,7 +98,7 @@ const DoctorDashboard = () => {
               <Clock className="h-5 w-5 text-accent-foreground" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">~{waitingPatients.length * avgMinutesPerPatient}m</p>
+              <p className="text-2xl font-bold text-foreground">~{waitingPatients.length * avgMinutesPerPatient + delayMinutes}m</p>
               <p className="text-xs text-muted-foreground">Total Wait</p>
             </div>
           </div>
@@ -104,6 +113,47 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
+        {/* Delay Control */}
+        <Card className="mb-6 shadow-soft">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TimerReset className="h-5 w-5 text-primary" />
+              Delay All Visits
+            </CardTitle>
+            <CardDescription>Add extra wait time for all patients (e.g., emergency delay)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9"
+                disabled={delayMinutes <= 0}
+                onClick={() => setDelayMinutes(Math.max(0, delayMinutes - 5))}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <div className="flex-1 rounded-lg bg-accent px-4 py-2 text-center">
+                <span className="text-2xl font-bold text-foreground">{delayMinutes}</span>
+                <span className="ml-1 text-sm text-muted-foreground">min delay</span>
+              </div>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9"
+                onClick={() => setDelayMinutes(delayMinutes + 5)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {delayMinutes > 0 && (
+              <Button variant="ghost" size="sm" className="mt-2 w-full text-xs text-muted-foreground" onClick={() => setDelayMinutes(0)}>
+                Reset delay to 0
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Current Patient */}
         {currentPatient && (
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
@@ -115,9 +165,24 @@ const DoctorDashboard = () => {
                   {currentPatient.name}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{currentPatient.reason}</span>
-                <Button size="sm" variant="outline" onClick={() => markDone(currentPatient.id)}>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{currentPatient.reason}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {currentPatient.isFollowUp ? `Follow-up (Visit #${currentPatient.visitNumber})` : "First Visit"}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="doctor-notes" className="text-sm">Doctor Notes</Label>
+                  <Textarea
+                    id="doctor-notes"
+                    placeholder="Add notes about this patient's visit..."
+                    value={currentNotes}
+                    onChange={(e) => setCurrentNotes(e.target.value)}
+                    className="min-h-[80px] resize-none"
+                  />
+                </div>
+                <Button size="sm" variant="outline" onClick={handleMarkDone} className="w-full">
                   <UserCheck className="mr-2 h-4 w-4" /> Mark Done
                 </Button>
               </CardContent>
@@ -164,7 +229,9 @@ const DoctorDashboard = () => {
                         </span>
                         <div>
                           <p className="font-medium text-foreground">{patient.name}</p>
-                          <p className="text-xs text-muted-foreground">{patient.reason}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {patient.reason} • {patient.isFollowUp ? `Follow-up #${patient.visitNumber}` : "First Visit"}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -178,7 +245,7 @@ const DoctorDashboard = () => {
                           <PhoneCall className="mr-1 h-3 w-3" /> Call
                         </Button>
                         <span className="ml-1 text-sm text-muted-foreground">
-                          ~{(idx + (currentPatient ? 1 : 0)) * avgMinutesPerPatient}m
+                          ~{(idx + (currentPatient ? 1 : 0)) * avgMinutesPerPatient + delayMinutes}m
                         </span>
                       </div>
                     </motion.div>
