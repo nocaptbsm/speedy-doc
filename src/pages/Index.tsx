@@ -42,7 +42,7 @@ const Index = () => {
             <CalendarPlus className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Book Your Appointment</h1>
-          <p className="mt-2 text-muted-foreground">Join the queue and track your position in real time</p>
+          <p className="mt-2 text-muted-foreground">Schedule your consultation and receive real-time updates on your appointment status</p>
         </div>
 
         {/* Stats */}

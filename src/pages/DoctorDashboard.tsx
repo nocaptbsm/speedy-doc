@@ -18,7 +18,7 @@ const DoctorDashboard = () => {
   const [doctorId, setDoctorId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [currentNotes, setCurrentNotes] = useState("");
+  const [notesMap, setNotesMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 5000);
@@ -35,12 +35,16 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleMarkDone = () => {
-    if (currentPatient) {
-      markDone(currentPatient.id, currentNotes);
-      setCurrentNotes("");
-    }
+  const handleMarkDone = (patientId: string) => {
+    markDone(patientId, notesMap[patientId] || "");
+    setNotesMap((prev) => {
+      const next = { ...prev };
+      delete next[patientId];
+      return next;
+    });
   };
+
+  const calledPatients = patients.filter((p) => p.status === "called");
 
   const waitingPatients = patients.filter((p) => p.status === "waiting");
   const doneToday = patients.filter((p) => p.status === "done").length;
@@ -154,40 +158,42 @@ const DoctorDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Current Patient */}
-        {currentPatient && (
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <Card className="mb-6 border-primary/30 shadow-soft">
-              <CardHeader className="pb-3">
-                <CardDescription>Currently Seeing</CardDescription>
-                <CardTitle className="flex items-center gap-2">
-                  <PhoneCall className="h-5 w-5 text-primary" />
-                  {currentPatient.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{currentPatient.reason}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {currentPatient.isFollowUp ? `Follow-up (Visit #${currentPatient.visitNumber})` : "First Visit"}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="doctor-notes" className="text-sm">Doctor Notes</Label>
-                  <Textarea
-                    id="doctor-notes"
-                    placeholder="Add notes about this patient's visit..."
-                    value={currentNotes}
-                    onChange={(e) => setCurrentNotes(e.target.value)}
-                    className="min-h-[80px] resize-none"
-                  />
-                </div>
-                <Button size="sm" variant="outline" onClick={handleMarkDone} className="w-full">
-                  <UserCheck className="mr-2 h-4 w-4" /> Mark Done
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* Called Patients */}
+        {calledPatients.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Currently Seeing ({calledPatients.length})</h2>
+            <AnimatePresence>
+              {calledPatients.map((cp) => (
+                <motion.div key={cp.id} initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}>
+                  <Card className="border-primary/30 shadow-soft">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <PhoneCall className="h-5 w-5 text-primary" />
+                        {cp.name}
+                      </CardTitle>
+                      <CardDescription>
+                        {cp.reason} • {cp.isFollowUp ? `Follow-up (Visit #${cp.visitNumber})` : "First Visit"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Doctor Notes</Label>
+                        <Textarea
+                          placeholder="Add notes about this patient's visit..."
+                          value={notesMap[cp.id] || ""}
+                          onChange={(e) => setNotesMap((prev) => ({ ...prev, [cp.id]: e.target.value }))}
+                          className="min-h-[80px] resize-none"
+                        />
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => handleMarkDone(cp.id)} className="w-full">
+                        <UserCheck className="mr-2 h-4 w-4" /> Mark Done
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         )}
 
         {/* Call Next */}
@@ -245,7 +251,7 @@ const DoctorDashboard = () => {
                           <PhoneCall className="mr-1 h-3 w-3" /> Call
                         </Button>
                         <span className="ml-1 text-sm text-muted-foreground">
-                          ~{(idx + (currentPatient ? 1 : 0)) * avgMinutesPerPatient + delayMinutes}m
+                          ~{(idx + calledPatients.length) * avgMinutesPerPatient + delayMinutes}m
                         </span>
                       </div>
                     </motion.div>
