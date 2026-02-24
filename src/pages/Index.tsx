@@ -25,6 +25,7 @@ const Index = () => {
     e.preventDefault();
     if (!name || !phone || !reason) return;
     const patient = addPatient({ name, phone, reason });
+    alert(`Your Patient ID is: ${patient.patientId}\nPlease note it down for reference.`);
     navigate(`/queue/${patient.id}`);
   };
 

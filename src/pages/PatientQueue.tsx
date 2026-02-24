@@ -69,6 +69,7 @@ const PatientQueue = () => {
         <Card className="shadow-soft">
           <CardContent className="p-6">
             <div className="mb-4 text-center">
+              <p className="text-xs font-mono font-semibold text-primary">{patient.patientId || "—"}</p>
               <h2 className="text-xl font-semibold text-foreground">{patient.name}</h2>
               <p className="text-sm text-muted-foreground">{patient.reason}</p>
             </div>
