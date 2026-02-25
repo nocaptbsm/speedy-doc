@@ -6,6 +6,9 @@ export interface Patient {
   name: string;
   phone: string;
   reason: string;
+  age?: number;
+  height?: number;
+  weight?: number;
   bookedAt: number;
   calledAt?: number;
   doneAt?: number;
@@ -27,6 +30,7 @@ interface QueueContextType {
   currentPatient: Patient | null;
   avgMinutesPerPatient: number;
   findPatientByPhone: (phone: string) => Patient | undefined;
+  findPatientByPatientId: (patientId: string) => Patient | undefined;
   delayMinutes: number;
   setDelayMinutes: (minutes: number) => void;
   getVisitCount: (phone: string) => number;
@@ -156,9 +160,14 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [patients]
   );
 
+  const findPatientByPatientId = useCallback(
+    (patientId: string) => patients.find((p) => p.patientId === patientId),
+    [patients]
+  );
+
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, delayMinutes, setDelayMinutes, getVisitCount }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount }}
     >
       {children}
     </QueueContext.Provider>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueue } from "@/contexts/QueueContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { motion } from "framer-motion";
-import { ClipboardList, Printer, Search, CalendarIcon, X } from "lucide-react";
+import { ClipboardList, Printer, Search, CalendarIcon, X, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+
+const VALID_CREDENTIALS = [
+  { id: "1234", password: "1234" },
+  { id: "DRSK", password: "Sandeep1234" },
+];
 
 const formatDate = (ts: number) => {
   const d = new Date(ts);
@@ -28,6 +33,54 @@ const PatientRecords = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [doctorId, setDoctorId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (VALID_CREDENTIALS.some((c) => c.id === doctorId && c.password === password)) {
+      setIsAuthenticated(true);
+      setError("");
+    } else {
+      setError("Invalid ID or password");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="w-full max-w-sm shadow-soft">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Lock className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Records Access</CardTitle>
+              <CardDescription>Enter your credentials to view patient records</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="doctorId">Doctor ID</Label>
+                  <Input id="doctorId" placeholder="Enter your ID" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="w-full gradient-primary text-primary-foreground">Login</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   const sorted = [...patients].reverse();
 
