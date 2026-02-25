@@ -12,6 +12,7 @@ import PatientRecords from "./pages/PatientRecords";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import NotFound from "./pages/NotFound";
 
+
 const queryClient = new QueryClient();
 
 const App = () => (
