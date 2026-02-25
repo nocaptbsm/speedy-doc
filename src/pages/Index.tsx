@@ -12,7 +12,7 @@ import { CalendarPlus, Clock, Users, ArrowRight, UserPlus, RotateCcw, XCircle } 
 const firstVisitReasons = ["Consultation", "Lab reports", "Others"];
 
 const Index = () => {
-  const { addPatient, patients, findPatientByPatientId, bookingOpen } = useQueue();
+  const { addPatient, patients, findPatientByPatientId, bookingOpen, maxBookingsPerDay, getTodayBookingCount } = useQueue();
   const navigate = useNavigate();
 
   const [visitType, setVisitType] = useState<"" | "first" | "followup">("");
@@ -26,6 +26,7 @@ const Index = () => {
   const [followUpError, setFollowUpError] = useState("");
 
   const waitingCount = patients.filter((p) => p.status === "waiting").length;
+  const dailyLimitReached = maxBookingsPerDay > 0 && getTodayBookingCount() >= maxBookingsPerDay;
 
   const handleFirstVisitSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +109,21 @@ const Index = () => {
           </motion.div>
         )}
 
-        {bookingOpen && (
+        {bookingOpen && dailyLimitReached && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+            <Card className="mb-6 border-destructive/30 bg-destructive/5 shadow-soft">
+              <CardContent className="flex flex-col items-center gap-3 py-8">
+                <XCircle className="h-12 w-12 text-destructive" />
+                <h2 className="text-xl font-bold text-foreground">Daily Booking Limit Reached</h2>
+                <p className="text-center text-muted-foreground">
+                  The maximum number of bookings for today ({maxBookingsPerDay}) has been reached. Please try again tomorrow.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {bookingOpen && !dailyLimitReached && (
           <>
             {/* Stats */}
             <div className="mb-6 grid grid-cols-2 gap-3">
