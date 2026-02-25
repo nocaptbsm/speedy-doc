@@ -30,7 +30,7 @@ const formatTime = (ts: number) => {
 };
 
 const PatientRecords = () => {
-  const { patients, deletePatient } = useQueue();
+  const { patients, deletePatient, deleteAllPatients } = useQueue();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
@@ -244,6 +244,25 @@ const PatientRecords = () => {
                 <Button size="sm" variant="outline" onClick={handlePrint} disabled={filtered.length === 0}>
                   <Printer className="mr-1 h-4 w-4" /> Print / PDF
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" disabled={patients.length === 0}>
+                      <Trash2 className="mr-1 h-4 w-4" /> Delete All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete All Records</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete all {patients.length} patient records? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteAllPatients} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardTitle>
           </CardHeader>
