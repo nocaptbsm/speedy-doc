@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { Search, Hash, Clock, PhoneCall, CheckCircle2, Heart, CalendarClock } from "lucide-react";
+import { Search, Hash, Clock, PhoneCall, CheckCircle2, CalendarClock, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const WELL_WISHES = [
   { emoji: "🌻", title: "Bloom back to health!", message: "Every day is a step closer to feeling your best. Take care!" },
@@ -27,15 +28,21 @@ const getRandomWish = (seed: string) => {
 };
 
 const PatientsDashboard = () => {
-  const { findPatientByPhone, getPatientPosition, getPatientETA } = useQueue();
+  const { patients, getPatientPosition, getPatientETA } = useQueue();
   const [phone, setPhone] = useState("");
   const [searched, setSearched] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  const patient = searched ? findPatientByPhone(phone) : undefined;
+  const matchingPatients = searched ? patients.filter((p) => p.phone === phone) : [];
+  const patient =
+    matchingPatients.length === 1
+      ? matchingPatients[0]
+      : matchingPatients.find((p) => p.id === selectedPatientId) || null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearched(true);
+    setSelectedPatientId(null);
   };
 
   const position = patient ? getPatientPosition(patient.id) : -1;
@@ -67,7 +74,7 @@ const PatientsDashboard = () => {
                   id="phone-lookup"
                   placeholder="Enter your phone number"
                   value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setSearched(false); }}
+                  onChange={(e) => { setPhone(e.target.value); setSearched(false); setSelectedPatientId(null); }}
                   required
                 />
               </div>
@@ -78,12 +85,39 @@ const PatientsDashboard = () => {
           </CardContent>
         </Card>
 
-        {searched && !patient && (
+        {searched && matchingPatients.length === 0 && (
           <Card className="shadow-soft">
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">No active appointment found for this phone number</p>
             </CardContent>
           </Card>
+        )}
+
+        {searched && matchingPatients.length > 1 && !selectedPatientId && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card className="mb-6 shadow-soft">
+              <CardHeader className="text-center pb-2">
+                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Multiple Bookings Found</CardTitle>
+                <CardDescription>Select a Patient ID to view status</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 px-6 pb-6">
+                {matchingPatients.map((p) => (
+                  <Button
+                    key={p.id}
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setSelectedPatientId(p.id)}
+                  >
+                    <span className="font-mono text-sm font-semibold text-primary">{p.patientId}</span>
+                    <span className="text-xs text-muted-foreground">{p.name} — {p.reason}</span>
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
         {patient && isCalled && (
