@@ -20,7 +20,7 @@ export interface Patient {
 
 interface QueueContextType {
   patients: Patient[];
-  addPatient: (patient: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">) => Patient;
+  addPatient: (patient: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">, reusePatientId?: string) => Patient;
   callNextPatient: () => Patient | null;
   callSpecificPatient: (id: string) => void;
   movePatient: (id: string, direction: "up" | "down") => void;
@@ -34,6 +34,9 @@ interface QueueContextType {
   delayMinutes: number;
   setDelayMinutes: (minutes: number) => void;
   getVisitCount: (phone: string) => number;
+  bookingOpen: boolean;
+  setBookingOpen: (open: boolean) => void;
+  deletePatient: (id: string) => void;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -47,6 +50,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return stored ? JSON.parse(stored) : [];
   });
   const [delayMinutes, setDelayMinutes] = useState<number>(0);
+  const [bookingOpen, setBookingOpen] = useState<boolean>(true);
 
   useEffect(() => {
     localStorage.setItem("clinic-queue", JSON.stringify(patients));
@@ -61,16 +65,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return `MQ-${String(count).padStart(3, "0")}`;
   }, [patients]);
 
-  const addPatient = useCallback((data: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">) => {
+  const addPatient = useCallback((data: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">, reusePatientId?: string) => {
     const doneVisits = patients.filter((p) => p.phone === data.phone && p.status === "done").length;
     const hasVisitedBefore = doneVisits > 0;
     const newPatient: Patient = {
       ...data,
       id: crypto.randomUUID(),
-      patientId: generatePatientId(),
+      patientId: reusePatientId || generatePatientId(),
       bookedAt: Date.now(),
       status: "waiting",
-      isFollowUp: hasVisitedBefore,
+      isFollowUp: hasVisitedBefore || !!reusePatientId,
       visitNumber: doneVisits + 1,
     };
     setPatients((prev) => [...prev, newPatient]);
@@ -126,6 +130,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done", doneAt: Date.now(), doctorNotes: notes || p.doctorNotes } : p)));
   }, []);
 
+  const deletePatient = useCallback((id: string) => {
+    setPatients((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
   const waitingPatients = patients.filter((p) => p.status === "waiting");
   const calledPatients = patients.filter((p) => p.status === "called");
   const currentPatient = calledPatients[0] || null;
@@ -167,7 +175,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient }}
     >
       {children}
     </QueueContext.Provider>

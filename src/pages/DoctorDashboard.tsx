@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus } from "lucide-react";
+import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus, DoorClosed, DoorOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const VALID_CREDENTIALS = [
@@ -14,7 +14,7 @@ const VALID_CREDENTIALS = [
 ];
 
 const DoctorDashboard = () => {
-  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes } = useQueue();
+  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes, bookingOpen, setBookingOpen } = useQueue();
   const [, setTick] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [doctorId, setDoctorId] = useState("");
@@ -157,6 +157,26 @@ const DoctorDashboard = () => {
                 Reset delay to 0
               </Button>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Booking Toggle */}
+        <Card className="mb-6 shadow-soft">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              {bookingOpen ? <DoorOpen className="h-5 w-5 text-primary" /> : <DoorClosed className="h-5 w-5 text-destructive" />}
+              <div>
+                <p className="font-semibold text-foreground">{bookingOpen ? "Booking is Open" : "Booking is Closed"}</p>
+                <p className="text-xs text-muted-foreground">{bookingOpen ? "Patients can book new appointments" : "New appointments are blocked"}</p>
+              </div>
+            </div>
+            <Button
+              variant={bookingOpen ? "destructive" : "default"}
+              size="sm"
+              onClick={() => setBookingOpen(!bookingOpen)}
+            >
+              {bookingOpen ? "Stop Booking" : "Open Booking"}
+            </Button>
           </CardContent>
         </Card>
 

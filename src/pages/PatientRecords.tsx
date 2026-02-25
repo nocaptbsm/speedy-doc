@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
-import { ClipboardList, Printer, Search, CalendarIcon, X, Lock } from "lucide-react";
+import { ClipboardList, Printer, Search, CalendarIcon, X, Lock, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,7 @@ const formatTime = (ts: number) => {
 };
 
 const PatientRecords = () => {
-  const { patients } = useQueue();
+  const { patients, deletePatient } = useQueue();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
@@ -268,6 +269,7 @@ const PatientRecords = () => {
                       <TableHead>Completed At</TableHead>
                       <TableHead>Consultation</TableHead>
                       <TableHead>Doctor Notes</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -309,9 +311,31 @@ const PatientRecords = () => {
                           <TableCell>{p.doneAt ? formatTime(p.doneAt) : "—"}</TableCell>
                           <TableCell>{consultMins ? `${consultMins} min` : "—"}</TableCell>
                           <TableCell className="max-w-[200px] truncate text-xs">{p.doctorNotes || "—"}</TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Record</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete the record for {p.patientId} ({p.name})? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deletePatient(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
+
                   </TableBody>
                 </Table>
               </div>
