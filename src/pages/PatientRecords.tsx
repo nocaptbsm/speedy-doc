@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
-import { ClipboardList, Printer, Search, CalendarIcon, X, Lock, Trash2 } from "lucide-react";
+import { ClipboardList, Printer, Search, CalendarIcon, X, Lock, Trash2, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -30,10 +30,11 @@ const formatTime = (ts: number) => {
 };
 
 const PatientRecords = () => {
-  const { patients, deletePatient, deleteAllPatients } = useQueue();
+  const { patients, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount } = useQueue();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [limitInput, setLimitInput] = useState(String(maxBookingsPerDay || ""));
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -181,6 +182,43 @@ const PatientRecords = () => {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Patient Records</h1>
           <p className="mt-2 text-muted-foreground">Complete history of all patient bookings</p>
         </div>
+
+        {/* Daily Booking Limit */}
+        <Card className="mb-4 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Max Bookings Per Day</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Unlimited"
+                  value={limitInput}
+                  onChange={(e) => setLimitInput(e.target.value)}
+                  className="w-28"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const val = parseInt(limitInput) || 0;
+                    setMaxBookingsPerDay(val);
+                    setLimitInput(String(val || ""));
+                  }}
+                >
+                  Set
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {maxBookingsPerDay > 0
+                  ? `Today: ${getTodayBookingCount()} / ${maxBookingsPerDay} booked`
+                  : "Currently unlimited"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Search & Filters */}
         <Card className="mb-4 shadow-soft">

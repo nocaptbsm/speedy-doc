@@ -38,6 +38,9 @@ interface QueueContextType {
   setBookingOpen: (open: boolean) => void;
   deletePatient: (id: string) => void;
   deleteAllPatients: () => void;
+  maxBookingsPerDay: number;
+  setMaxBookingsPerDay: (limit: number) => void;
+  getTodayBookingCount: () => number;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -52,6 +55,22 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [delayMinutes, setDelayMinutes] = useState<number>(0);
   const [bookingOpen, setBookingOpen] = useState<boolean>(true);
+  const [maxBookingsPerDay, setMaxBookingsPerDay] = useState<number>(() => {
+    const stored = localStorage.getItem("clinic-max-bookings");
+    return stored ? parseInt(stored) : 0; // 0 means unlimited
+  });
+
+  useEffect(() => {
+    localStorage.setItem("clinic-max-bookings", String(maxBookingsPerDay));
+  }, [maxBookingsPerDay]);
+
+  const getTodayBookingCount = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + 86400000;
+    return patients.filter((p) => p.bookedAt >= todayStart && p.bookedAt < todayEnd).length;
+  }, [patients]);
 
   useEffect(() => {
     localStorage.setItem("clinic-queue", JSON.stringify(patients));
@@ -180,7 +199,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount }}
     >
       {children}
     </QueueContext.Provider>
