@@ -99,6 +99,7 @@
   @apply bg-background text-foreground;
 }
 
+
 @layer utilities {
   .gradient-primary {
     background: linear-gradient(135deg, hsl(174 62% 38%), hsl(174 62% 48%));
