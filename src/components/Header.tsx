@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Stethoscope, CalendarPlus, LayoutDashboard, UserSearch, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const Header = () => {
   const location = useLocation();
@@ -21,31 +22,33 @@ const Header = () => {
           </div>
           <span className="text-lg font-semibold text-foreground">MediQueue</span>
         </Link>
-        <nav className="flex items-center gap-1">
-          {links.map(({ to, label, icon: Icon }) => {
-            const active = location.pathname === to;
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
-                {active && (
-                  <motion.div
-                    layoutId="active-nav"
-                    className="absolute inset-0 rounded-lg bg-accent"
-                    style={{ zIndex: -1 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-1 sm:gap-4">
+          <nav className="flex items-center gap-1">
+            {links.map(({ to, label, icon: Icon }) => {
+              const active = location.pathname === to;
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                  {active && (
+                    <motion.div
+                      layoutId="active-nav"
+                      className="absolute inset-0 rounded-lg bg-accent"
+                      style={{ zIndex: -1 }}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

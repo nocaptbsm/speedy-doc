@@ -90,26 +90,34 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+}
+
+.dark body {
+  @apply bg-background text-foreground;
 }
 
 @layer utilities {
   .gradient-primary {
     background: linear-gradient(135deg, hsl(174 62% 38%), hsl(174 62% 48%));
   }
+
   .gradient-hero {
     background: linear-gradient(160deg, hsl(174 62% 38%) 0%, hsl(190 60% 42%) 50%, hsl(200 55% 45%) 100%);
   }
+
   .shadow-soft {
     box-shadow: 0 2px 16px -4px hsl(174 62% 38% / 0.12), 0 1px 4px -2px hsl(0 0% 0% / 0.06);
   }
+
   .shadow-card {
     box-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.04);
   }
+
   .glass {
     backdrop-filter: blur(12px);
-    background: hsl(0 0% 100% / 0.8);
+    background: hsl(var(--background) / 0.8);
   }
 }
