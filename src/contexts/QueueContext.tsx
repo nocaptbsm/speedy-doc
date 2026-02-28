@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-<<<<<<< HEAD
 import { supabase } from "../lib/supabase";
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
 
 export interface Patient {
   id: string;
@@ -20,10 +17,7 @@ export interface Patient {
   isFollowUp: boolean;
   visitNumber: number;
   doctorNotes?: string;
-<<<<<<< HEAD
   position_order?: number;
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
 }
 
 interface QueueContextType {
@@ -49,11 +43,8 @@ interface QueueContextType {
   maxBookingsPerDay: number;
   setMaxBookingsPerDay: (limit: number) => void;
   getTodayBookingCount: () => number;
-<<<<<<< HEAD
   isWhatsAppEnabled: boolean;
   setIsWhatsAppEnabled: (enabled: boolean) => void;
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -61,7 +52,6 @@ const QueueContext = createContext<QueueContextType | null>(null);
 const FIRST_VISIT_MINUTES = 10;
 const FOLLOW_UP_MINUTES = 5;
 
-<<<<<<< HEAD
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dbToPatient = (row: any): Patient => ({
   id: row.id,
@@ -211,23 +201,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Open in a new window/tab
     window.open(url, '_blank');
   }, [isWhatsAppEnabled]);
-=======
-export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>(() => {
-    const stored = localStorage.getItem("clinic-queue");
-    return stored ? JSON.parse(stored) : [];
-  });
-  const [delayMinutes, setDelayMinutes] = useState<number>(0);
-  const [bookingOpen, setBookingOpen] = useState<boolean>(true);
-  const [maxBookingsPerDay, setMaxBookingsPerDay] = useState<number>(() => {
-    const stored = localStorage.getItem("clinic-max-bookings");
-    return stored ? parseInt(stored) : 0; // 0 means unlimited
-  });
-
-  useEffect(() => {
-    localStorage.setItem("clinic-max-bookings", String(maxBookingsPerDay));
-  }, [maxBookingsPerDay]);
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
 
   const getTodayBookingCount = useCallback(() => {
     const today = new Date();
@@ -237,13 +210,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return patients.filter((p) => p.bookedAt >= todayStart && p.bookedAt < todayEnd).length;
   }, [patients]);
 
-<<<<<<< HEAD
-=======
-  useEffect(() => {
-    localStorage.setItem("clinic-queue", JSON.stringify(patients));
-  }, [patients]);
 
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
   const getVisitCount = useCallback((phone: string) => {
     return patients.filter((p) => p.phone === phone && p.status === "done").length;
   }, [patients]);
@@ -256,10 +223,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addPatient = useCallback((data: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">, reusePatientId?: string) => {
     const doneVisits = patients.filter((p) => p.phone === data.phone && p.status === "done").length;
     const hasVisitedBefore = doneVisits > 0;
-<<<<<<< HEAD
     const maxOrder = patients.length > 0 ? Math.max(...patients.map(p => p.position_order || 0)) : 0;
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
     const newPatient: Patient = {
       ...data,
       id: crypto.randomUUID(),
@@ -268,23 +232,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: "waiting",
       isFollowUp: hasVisitedBefore || !!reusePatientId,
       visitNumber: doneVisits + 1,
-<<<<<<< HEAD
       position_order: maxOrder + 1,
     };
 
     setPatients((prev) => [...prev, newPatient]);
     supabase.from('patients').insert(patientToDb(newPatient)).then();
-
-=======
-    };
-    setPatients((prev) => [...prev, newPatient]);
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
     return newPatient;
   }, [patients, generatePatientId]);
 
   const callNextPatient = useCallback(() => {
     let calledPatient: Patient | null = null;
-<<<<<<< HEAD
     const nextIdx = patients.findIndex((p) => p.status === "waiting");
     if (nextIdx === -1) return null;
 
@@ -360,70 +317,17 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (notes) updateData.doctor_notes = notes;
 
     supabase.from('patients').update(updateData).eq('id', id).then();
-=======
-    setPatients((prev) => {
-      const nextIdx = prev.findIndex((p) => p.status === "waiting");
-      if (nextIdx === -1) return prev;
-      calledPatient = { ...prev[nextIdx], status: "called", calledAt: Date.now() };
-      const updated = [...prev];
-      updated[nextIdx] = calledPatient;
-      return updated;
-    });
-    return calledPatient;
-  }, []);
-
-  const callSpecificPatient = useCallback((id: string) => {
-    setPatients((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "called" as const, calledAt: Date.now() } : p))
-    );
-  }, []);
-
-  const movePatient = useCallback((id: string, direction: "up" | "down") => {
-    setPatients((prev) => {
-      const waitingIds = prev.filter((p) => p.status === "waiting").map((p) => p.id);
-      const idx = waitingIds.indexOf(id);
-      if (idx === -1) return prev;
-      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (swapIdx < 0 || swapIdx >= waitingIds.length) return prev;
-      [waitingIds[idx], waitingIds[swapIdx]] = [waitingIds[swapIdx], waitingIds[idx]];
-      // Rebuild: non-waiting stay in place, waiting reordered
-      const nonWaiting = prev.filter((p) => p.status !== "waiting");
-      const waitingMap = new Map(prev.filter((p) => p.status === "waiting").map((p) => [p.id, p]));
-      const reorderedWaiting = waitingIds.map((wid) => waitingMap.get(wid)!);
-      // Merge back preserving original interleaving positions
-      const result: Patient[] = [];
-      let wi = 0;
-      for (const p of prev) {
-        if (p.status === "waiting") {
-          result.push(reorderedWaiting[wi++]);
-        } else {
-          result.push(p);
-        }
-      }
-      return result;
-    });
-  }, []);
-
-  const markDone = useCallback((id: string, notes?: string) => {
-    setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, status: "done", doneAt: Date.now(), doctorNotes: notes || p.doctorNotes } : p)));
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
   }, []);
 
   const deletePatient = useCallback((id: string) => {
     setPatients((prev) => prev.filter((p) => p.id !== id));
-<<<<<<< HEAD
     supabase.from('patients').delete().eq('id', id).then();
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
   }, []);
 
   const deleteAllPatients = useCallback(() => {
     setPatients([]);
-<<<<<<< HEAD
     // Delete all patients
     supabase.from('patients').delete().neq('id', '00000000-0000-0000-0000-000000000000').then();
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
   }, []);
 
   const waitingPatients = patients.filter((p) => p.status === "waiting");
@@ -467,11 +371,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-<<<<<<< HEAD
       value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount, isWhatsAppEnabled, setIsWhatsAppEnabled }}
-=======
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount }}
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
     >
       {children}
     </QueueContext.Provider>

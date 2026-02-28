@@ -5,11 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-<<<<<<< HEAD
 import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus, DoorClosed, DoorOpen, MessageCircle } from "lucide-react";
-=======
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus, DoorClosed, DoorOpen } from "lucide-react";
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
 import { useEffect, useState } from "react";
 
 const VALID_CREDENTIALS = [
@@ -18,11 +14,7 @@ const VALID_CREDENTIALS = [
 ];
 
 const DoctorDashboard = () => {
-<<<<<<< HEAD
   const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes, bookingOpen, setBookingOpen, isWhatsAppEnabled, setIsWhatsAppEnabled } = useQueue();
-=======
-  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes, bookingOpen, setBookingOpen } = useQueue();
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
   const [, setTick] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [doctorId, setDoctorId] = useState("");
@@ -188,7 +180,6 @@ const DoctorDashboard = () => {
           </CardContent>
         </Card>
 
-<<<<<<< HEAD
         {/* WhatsApp Notification Toggle */}
         <Card className="mb-6 shadow-soft">
           <CardContent className="flex items-center justify-between p-4">
@@ -210,8 +201,6 @@ const DoctorDashboard = () => {
           </CardContent>
         </Card>
 
-=======
->>>>>>> 000c180a832d60fcea91c98a53ff0935bec3ad9a
         {/* Called Patients */}
         {calledPatients.length > 0 && (
           <div className="mb-6 space-y-3">
