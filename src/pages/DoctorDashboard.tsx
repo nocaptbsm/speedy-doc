@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus, DoorClosed, DoorOpen, MessageCircle } from "lucide-react";
+import { PhoneCall, UserCheck, Users, Clock, CheckCircle2, ArrowUp, ArrowDown, Lock, TimerReset, Plus, Minus, DoorClosed, DoorOpen, MessageCircle, ListOrdered } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const VALID_CREDENTIALS = [
@@ -14,7 +15,7 @@ const VALID_CREDENTIALS = [
 ];
 
 const DoctorDashboard = () => {
-  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes, bookingOpen, setBookingOpen, isWhatsAppEnabled, setIsWhatsAppEnabled } = useQueue();
+  const { patients, callNextPatient, callSpecificPatient, movePatient, markDone, currentPatient, avgMinutesPerPatient, delayMinutes, setDelayMinutes, bookingOpen, setBookingOpen, isWhatsAppEnabled, setIsWhatsAppEnabled, priorityType, setPriorityType } = useQueue();
   const [, setTick] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [doctorId, setDoctorId] = useState("");
@@ -198,6 +199,46 @@ const DoctorDashboard = () => {
             >
               {isWhatsAppEnabled ? "Enabled" : "Disabled"}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Queue Priority */}
+        <Card className="mb-6 shadow-soft">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ListOrdered className="h-5 w-5 text-primary" />
+              Queue Priority
+            </CardTitle>
+            <CardDescription>Prioritize follow-up or first-visit (consultation) patients in the queue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup
+              value={priorityType}
+              onValueChange={(val) => setPriorityType(val as "none" | "follow_up" | "consultation")}
+              className="space-y-2"
+            >
+              <div className="flex items-center space-x-2 rounded-lg border border-border p-3">
+                <RadioGroupItem value="none" id="priority-none" />
+                <Label htmlFor="priority-none" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-foreground">No Priority</span>
+                  <p className="text-xs text-muted-foreground">First come, first served</p>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 rounded-lg border border-border p-3">
+                <RadioGroupItem value="follow_up" id="priority-followup" />
+                <Label htmlFor="priority-followup" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-foreground">Follow-up First</span>
+                  <p className="text-xs text-muted-foreground">Follow-up patients are placed ahead in the queue</p>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 rounded-lg border border-border p-3">
+                <RadioGroupItem value="consultation" id="priority-consultation" />
+                <Label htmlFor="priority-consultation" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-foreground">Consultation First</span>
+                  <p className="text-xs text-muted-foreground">First-visit patients are placed ahead in the queue</p>
+                </Label>
+              </div>
+            </RadioGroup>
           </CardContent>
         </Card>
 

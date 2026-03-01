@@ -28,13 +28,17 @@ CREATE TABLE clinic_settings (
   id int PRIMARY KEY DEFAULT 1,
   delay_minutes int NOT NULL DEFAULT 0,
   booking_open boolean NOT NULL DEFAULT true,
-  max_bookings_per_day int NOT NULL DEFAULT 0
+  max_bookings_per_day int NOT NULL DEFAULT 0,
+  priority_type text NOT NULL DEFAULT 'none'
 );
 
 -- Insert initial settings
-INSERT INTO clinic_settings (id, delay_minutes, booking_open, max_bookings_per_day)
-VALUES (1, 0, true, 0)
+INSERT INTO clinic_settings (id, delay_minutes, booking_open, max_bookings_per_day, priority_type)
+VALUES (1, 0, true, 0, 'none')
 ON CONFLICT (id) DO NOTHING;
+
+-- Add priority_type column if not exists (migration)
+ALTER TABLE clinic_settings ADD COLUMN IF NOT EXISTS priority_type text NOT NULL DEFAULT 'none';
 
 -- Enable realtime for settings
 ALTER PUBLICATION supabase_realtime ADD TABLE clinic_settings;
