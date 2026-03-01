@@ -45,12 +45,25 @@ interface QueueContextType {
   getTodayBookingCount: () => number;
   isWhatsAppEnabled: boolean;
   setIsWhatsAppEnabled: (enabled: boolean) => void;
+  priorityType: "none" | "follow_up" | "consultation";
+  setPriorityType: (type: "none" | "follow_up" | "consultation") => void;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
 
 const FIRST_VISIT_MINUTES = 10;
 const FOLLOW_UP_MINUTES = 5;
+
+const sortByPriority = (patients: Patient[], priority: "none" | "follow_up" | "consultation"): Patient[] => {
+  if (priority === "none") return patients;
+  return [...patients].sort((a, b) => {
+    const aIsPriority = priority === "follow_up" ? a.isFollowUp : !a.isFollowUp;
+    const bIsPriority = priority === "follow_up" ? b.isFollowUp : !b.isFollowUp;
+    if (aIsPriority && !bIsPriority) return -1;
+    if (!aIsPriority && bIsPriority) return 1;
+    return 0;
+  });
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dbToPatient = (row: any): Patient => ({
@@ -100,6 +113,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [bookingOpen, setBookingOpenState] = useState<boolean>(true);
   const [maxBookingsPerDay, setMaxBookingsPerDayState] = useState<number>(0);
   const [isWhatsAppEnabled, setIsWhatsAppEnabledState] = useState<boolean>(true);
+  const [priorityType, setPriorityTypeState] = useState<"none" | "follow_up" | "consultation">("none");
 
   const fetchState = useCallback(async () => {
     // Migration logic
@@ -137,6 +151,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setDelayMinutesState(settings.delay_minutes);
       setBookingOpenState(settings.booking_open);
       setMaxBookingsPerDayState(settings.max_bookings_per_day);
+      if (settings.priority_type) setPriorityTypeState(settings.priority_type);
     }
   }, []);
 
@@ -177,6 +192,23 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsWhatsAppEnabledState(enabled);
     localStorage.setItem('clinic-whatsapp-enabled', JSON.stringify(enabled));
   }, []);
+
+  const setPriorityType = useCallback(async (type: "none" | "follow_up" | "consultation") => {
+    setPriorityTypeState(type);
+    await supabase.from('clinic_settings').update({ priority_type: type }).eq('id', 1);
+    // Re-sort existing waiting patients based on new priority
+    const { data: dbPatients } = await supabase.from('patients').select('*').eq('status', 'waiting').order('position_order', { ascending: true });
+    if (dbPatients && dbPatients.length > 0) {
+      const mapped = dbPatients.map(dbToPatient);
+      const sorted = sortByPriority(mapped, type);
+      // Update position_order for each
+      for (let i = 0; i < sorted.length; i++) {
+        await supabase.from('patients').update({ position_order: i + 1 }).eq('id', sorted[i].id);
+      }
+      // Refetch
+      fetchState();
+    }
+  }, [fetchState]);
 
   useEffect(() => {
     const stored = localStorage.getItem('clinic-whatsapp-enabled');
@@ -223,22 +255,43 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addPatient = useCallback((data: Omit<Patient, "id" | "patientId" | "bookedAt" | "status" | "isFollowUp" | "visitNumber">, reusePatientId?: string) => {
     const doneVisits = patients.filter((p) => p.phone === data.phone && p.status === "done").length;
     const hasVisitedBefore = doneVisits > 0;
-    const maxOrder = patients.length > 0 ? Math.max(...patients.map(p => p.position_order || 0)) : 0;
+    const isFollowUp = hasVisitedBefore || !!reusePatientId;
     const newPatient: Patient = {
       ...data,
       id: crypto.randomUUID(),
       patientId: reusePatientId || generatePatientId(),
       bookedAt: Date.now(),
       status: "waiting",
-      isFollowUp: hasVisitedBefore || !!reusePatientId,
+      isFollowUp,
       visitNumber: doneVisits + 1,
-      position_order: maxOrder + 1,
+      position_order: 0, // will be set below
     };
 
-    setPatients((prev) => [...prev, newPatient]);
-    supabase.from('patients').insert(patientToDb(newPatient)).then();
+    // Insert into correct position based on priority
+    const waitingList = patients.filter((p) => p.status === "waiting");
+    const allWithNew = [...waitingList, newPatient];
+    const sorted = sortByPriority(allWithNew, priorityType);
+    
+    // Assign new position_orders
+    const nonWaiting = patients.filter((p) => p.status !== "waiting");
+    const updatedWaiting = sorted.map((p, i) => ({ ...p, position_order: i + 1 }));
+    newPatient.position_order = updatedWaiting.find(p => p.id === newPatient.id)?.position_order || updatedWaiting.length;
+
+    setPatients([...nonWaiting, ...updatedWaiting].sort((a, b) => (a.position_order || 0) - (b.position_order || 0)));
+    supabase.from('patients').insert(patientToDb({ ...newPatient, position_order: newPatient.position_order })).then();
+    
+    // Update position_order for other waiting patients that may have shifted
+    updatedWaiting.forEach((p) => {
+      if (p.id !== newPatient.id) {
+        const original = waitingList.find(w => w.id === p.id);
+        if (original && original.position_order !== p.position_order) {
+          supabase.from('patients').update({ position_order: p.position_order }).eq('id', p.id).then();
+        }
+      }
+    });
+
     return newPatient;
-  }, [patients, generatePatientId]);
+  }, [patients, generatePatientId, priorityType]);
 
   const callNextPatient = useCallback(() => {
     let calledPatient: Patient | null = null;
@@ -371,7 +424,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <QueueContext.Provider
-      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount, isWhatsAppEnabled, setIsWhatsAppEnabled }}
+      value={{ patients, addPatient, callNextPatient, callSpecificPatient, movePatient, markDone, getPatientPosition, getPatientETA, currentPatient, avgMinutesPerPatient: FIRST_VISIT_MINUTES, findPatientByPhone, findPatientByPatientId, delayMinutes, setDelayMinutes, getVisitCount, bookingOpen, setBookingOpen, deletePatient, deleteAllPatients, maxBookingsPerDay, setMaxBookingsPerDay, getTodayBookingCount, isWhatsAppEnabled, setIsWhatsAppEnabled, priorityType, setPriorityType }}
     >
       {children}
     </QueueContext.Provider>
